@@ -1,0 +1,6 @@
+echo on
+time /T
+idmptmat "C:\Users\bding\Downloads\Calculex-PCM20_12052009_212115\Calculex-PCM20_12052009_212115.ch10" file1.txt -r 
+time /T
+
+C:\Users\bding\Downloads\Calculex-PCM20_12052009_212115
