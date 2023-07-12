@@ -85,7 +85,7 @@ namespace TMATDashboardApp
         }
         private void tree_btnClick(object sender, EventArgs e)
         {
-            String file = @"output.csv";
+            String file = "output.csv";
 
             TMATSFile test = new TMATSFile("Altitude", 2, 1, 5, 2, 0, 3);
             TMATSFile test2 = new TMATSFile("Depth", 3, 2, 5, 0, 1, 3);
@@ -95,16 +95,70 @@ namespace TMATDashboardApp
             output.AppendLine(test.toString());
             output.AppendLine(test2.toString());
             output.AppendLine(test3.toString());
+            
+            //Get the current count for each paramater
+            int count = 1;
 
+            //Establish an array of the lines of a Chapter 10 file
+            string filename = file_box.Text;
+            System.IO.File.WriteAllText("raw.txt", string.Empty);
+            if (filename.Contains(".ch10"))
+            {
+                create_output(" raw.txt", " -r", file_box);
+
+                Thread.Sleep(1000);
+                string[] lines = System.IO.File.ReadAllLines("raw.txt");
+                string separator = "\n";
+                outputBox.Text = string.Join(separator, lines);
+                System.IO.File.WriteAllText("raw.txt", string.Empty);
+
+                String name;
+                int incrementCol;
+                int incrementRow;
+                int initialCol;
+                int initialRow;
+                int endingCol;
+                int endingRow;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains($"D-{count}"))
+                    {
+                        if (lines[i].Contains($"D-{count}\\DLN"))
+                        {
+                            name = lines[i].Substring(lines[i].IndexOf(':') + 1);
+                        }
+                    }
+                    
+                }
+
+
+            }
+            else if (file_box.Text == "")
+            {
+                MessageBox.Show("Please enter the specified file");
+            }
+            else
+            {
+                MessageBox.Show("The file is not a Chapter 10 File");
+                file_box.Clear();
+                outputBox.Clear();
+            }
+
+            
+
+
+            //Write the data into a CSV file
             try
             {
-                File.AppendAllText(file, output.ToString());
+                File.WriteAllText(file, output.ToString());
             }
             catch(Exception ex)
             {
-                MessageBox.Show("Data could not be written to the CSV file.");
+                MessageBox.Show("Data could not be written to the CSV file. Exception: " + ex.Message);
                 return;
             }
+
+            MessageBox.Show("CSV created.");
         }
 
         private void clearBtn_Click(object sender, EventArgs e)
