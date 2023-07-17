@@ -3,6 +3,8 @@ using System.IO;
 using System.Windows.Forms;
 using System.Text;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace TMATDashboardApp
 {
@@ -65,8 +67,10 @@ namespace TMATDashboardApp
             internal int EndColumn;
             internal int InitialRow;
             internal int EndRow;
+            internal int NumRows;
+            internal int NumCols;
 
-            internal TMATSFile(string ParameterName, int IncrementColumns, int IncrementRows, int InitialColumn, int EndColumn, int InitialRow, int EndRow)
+            internal TMATSFile(string ParameterName, int IncrementColumns, int IncrementRows, int InitialColumn, int EndColumn, int InitialRow, int EndRow, int NumRows, int NumCols)
             {
                 this.ParameterName = ParameterName;
                 this.IncrementColumns = IncrementColumns;
@@ -75,27 +79,29 @@ namespace TMATDashboardApp
                 this.EndColumn = EndColumn;
                 this.InitialRow = InitialRow;
                 this.EndRow = EndRow;
+                this.NumRows = NumRows;
+                this.NumCols = NumCols;
             }
 
             internal string toString()
             {
                 return this.ParameterName + "," + this.IncrementColumns + "," + this.InitialColumn + "," + this.EndColumn + "," + this.IncrementRows
-                        + "," + this.InitialRow + "," + this.EndRow; 
+                        + "," + this.InitialRow + "," + this.EndRow;
             }
         }
         private void tree_btnClick(object sender, EventArgs e)
         {
-            String file = "output.csv";
 
-            TMATSFile test = new TMATSFile("Altitude", 2, 1, 5, 2, 0, 3);
-            TMATSFile test2 = new TMATSFile("Depth", 3, 2, 5, 0, 1, 3);
-            TMATSFile test3 = new TMATSFile("Speed", 5, 0, 1, 3, 2, 1);
+
+            TMATSFile test = new TMATSFile("Altitude", 2, 1, 5, 2, 0, 3, 5, 4);
+            TMATSFile test2 = new TMATSFile("Depth", 3, 2, 5, 0, 1, 3, 5, 6);
+            TMATSFile test3 = new TMATSFile("Speed", 5, 0, 1, 3, 2, 1, 3, 2);
 
             StringBuilder output = new StringBuilder();
             output.AppendLine(test.toString());
             output.AppendLine(test2.toString());
             output.AppendLine(test3.toString());
-            
+
             //Get the current count for each paramater
             int count = 1;
 
@@ -127,11 +133,45 @@ namespace TMATDashboardApp
                         {
                             name = lines[i].Substring(lines[i].IndexOf(':') + 1);
                         }
+
+                        if (lines[i].Contains($"D-{count})\\WI-y-n-m-e)"))
+                        {
+                            incrementCol = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
+                        }
+                        else
+                        {
+                            incrementCol = 0;
+                        }
+
+                        if (lines[i].Contains($"D-{count})\\WP-y-n-m-e)"))
+                        {
+                            initialCol = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
+                        }
+
+                        if (lines[i].Contains($"D-{count})\\EWP-y-n-m-e)"))
+                        {
+                            endingCol = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
+                        }
+
+                        if (lines[i].Contains($"D-{count})\\FI-y-n-m-e)"))
+                        {
+                            incrementRow = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
+                        }
+
+                        if (lines[i].Contains($"D-{count})\\FP-y-n-m-e)"))
+                        {
+                            initialRow = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
+                        }
+
+                        if (lines[i].Contains($"D-{count})\\EFP-y-n-m-e)"))
+                        {
+                            endingRow = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
+                            count++;
+                        }
+
                     }
-                    
+
                 }
-
-
             }
             else if (file_box.Text == "")
             {
@@ -144,15 +184,15 @@ namespace TMATDashboardApp
                 outputBox.Clear();
             }
 
-            
 
 
+            String file = $"{filename.Substring(0, filename.IndexOf("."))}.csv";
             //Write the data into a CSV file
             try
             {
                 File.WriteAllText(file, output.ToString());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show("Data could not be written to the CSV file. Exception: " + ex.Message);
                 return;
