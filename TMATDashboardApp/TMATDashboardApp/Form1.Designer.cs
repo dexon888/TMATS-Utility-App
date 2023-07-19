@@ -49,6 +49,8 @@
             file_1_btn = new Button_WOC();
             file_2_btn = new Button_WOC();
             label3 = new Label();
+            send = new Button_WOC();
+            receive = new Button_WOC();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             panel2.SuspendLayout();
@@ -101,7 +103,7 @@
             merge2.Name = "merge2";
             merge2.Size = new Size(288, 92);
             merge2.TabIndex = 8;
-            merge2.Text = "Merge Same TMAT File";
+            merge2.Text = "Merge Same TMATS File";
             merge2.UseVisualStyleBackColor = false;
             merge2.Click += merge2_Click;
             // 
@@ -116,7 +118,7 @@
             mergeBtn.Name = "mergeBtn";
             mergeBtn.Size = new Size(288, 74);
             mergeBtn.TabIndex = 7;
-            mergeBtn.Text = "Merge TMAT Files";
+            mergeBtn.Text = "Merge TMATS Files";
             mergeBtn.UseVisualStyleBackColor = false;
             mergeBtn.Click += mergeBtnClick;
             // 
@@ -131,7 +133,7 @@
             splitBtn.Name = "splitBtn";
             splitBtn.Size = new Size(294, 53);
             splitBtn.TabIndex = 6;
-            splitBtn.Text = "Split TMAT File";
+            splitBtn.Text = "Split TMATS File";
             splitBtn.UseVisualStyleBackColor = false;
             splitBtn.Click += splitBtnClick;
             // 
@@ -222,7 +224,7 @@
             inputButton.OnHoverTextColor = Color.Gray;
             inputButton.Size = new Size(99, 39);
             inputButton.TabIndex = 10;
-            inputButton.Text = "TMAT File Input";
+            inputButton.Text = "TMATS File Input";
             inputButton.TextColor = Color.White;
             inputButton.UseVisualStyleBackColor = true;
             inputButton.Click += inputBtn_Click;
@@ -294,7 +296,7 @@
             file_1_btn.OnHoverTextColor = Color.Gray;
             file_1_btn.Size = new Size(99, 29);
             file_1_btn.TabIndex = 15;
-            file_1_btn.Text = "File #1";
+            file_1_btn.Text = "File 1";
             file_1_btn.TextColor = Color.White;
             file_1_btn.UseVisualStyleBackColor = true;
             file_1_btn.Click += input_1Click;
@@ -313,7 +315,7 @@
             file_2_btn.OnHoverTextColor = Color.Gray;
             file_2_btn.Size = new Size(99, 27);
             file_2_btn.TabIndex = 16;
-            file_2_btn.Text = "File #2";
+            file_2_btn.Text = "File 2";
             file_2_btn.TextColor = Color.White;
             file_2_btn.UseVisualStyleBackColor = true;
             file_2_btn.Click += input_2Click;
@@ -328,10 +330,50 @@
             label3.TabIndex = 17;
             label3.Text = "Split";
             // 
+            // send
+            // 
+            send.BorderColor = Color.Silver;
+            send.ButtonColor = Color.FromArgb(46, 51, 73);
+            send.FlatAppearance.BorderSize = 0;
+            send.FlatStyle = FlatStyle.Flat;
+            send.Font = new Font("Microsoft JhengHei", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            send.Location = new Point(655, 192);
+            send.Name = "send";
+            send.OnHoverBorderColor = Color.Gray;
+            send.OnHoverButtonColor = Color.MidnightBlue;
+            send.OnHoverTextColor = Color.Gray;
+            send.Size = new Size(99, 39);
+            send.TabIndex = 19;
+            send.Text = "Send CSV";
+            send.TextColor = Color.White;
+            send.UseVisualStyleBackColor = true;
+            send.Click += send_Click;
+            // 
+            // receive
+            // 
+            receive.BorderColor = Color.Silver;
+            receive.ButtonColor = Color.FromArgb(46, 51, 73);
+            receive.FlatAppearance.BorderSize = 0;
+            receive.FlatStyle = FlatStyle.Flat;
+            receive.Font = new Font("Microsoft JhengHei", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            receive.Location = new Point(655, 248);
+            receive.Name = "receive";
+            receive.OnHoverBorderColor = Color.Gray;
+            receive.OnHoverButtonColor = Color.MidnightBlue;
+            receive.OnHoverTextColor = Color.Gray;
+            receive.Size = new Size(99, 39);
+            receive.TabIndex = 20;
+            receive.Text = "Receive CSV";
+            receive.TextColor = Color.White;
+            receive.UseVisualStyleBackColor = true;
+            receive.Click += receive_Click;
+            // 
             // Form1
             // 
             BackColor = Color.FromArgb(46, 51, 73);
             ClientSize = new Size(797, 576);
+            Controls.Add(receive);
+            Controls.Add(send);
             Controls.Add(label3);
             Controls.Add(file_2_btn);
             Controls.Add(file_1_btn);
@@ -380,5 +422,7 @@
         private Button_WOC file_2_btn;
         private Label label3;
         private Button merge2;
+        private Button_WOC send;
+        private Button_WOC receive;
     }
 }

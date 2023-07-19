@@ -3,15 +3,17 @@ using System.IO;
 using System.Windows.Forms;
 using System.Text;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Threading;
+using System.Net.Sockets;
 
 namespace TMATDashboardApp
 {
     public partial class Form1 : Form
     {
+        private TcpClient client;
+        private TcpListener listener;
         public Form1()
         {
+            client = new TcpClient();
             InitializeComponent();
         }
 
@@ -67,10 +69,8 @@ namespace TMATDashboardApp
             internal int EndColumn;
             internal int InitialRow;
             internal int EndRow;
-            internal int NumRows;
-            internal int NumCols;
 
-            internal TMATSFile(string ParameterName, int IncrementColumns, int IncrementRows, int InitialColumn, int EndColumn, int InitialRow, int EndRow, int NumRows, int NumCols)
+            internal TMATSFile(string ParameterName, int IncrementColumns, int IncrementRows, int InitialColumn, int EndColumn, int InitialRow, int EndRow)
             {
                 this.ParameterName = ParameterName;
                 this.IncrementColumns = IncrementColumns;
@@ -79,11 +79,9 @@ namespace TMATDashboardApp
                 this.EndColumn = EndColumn;
                 this.InitialRow = InitialRow;
                 this.EndRow = EndRow;
-                this.NumRows = NumRows;
-                this.NumCols = NumCols;
             }
 
-            internal string toString()
+            public override string ToString()
             {
                 return this.ParameterName + "," + this.IncrementColumns + "," + this.InitialColumn + "," + this.EndColumn + "," + this.IncrementRows
                         + "," + this.InitialRow + "," + this.EndRow;
@@ -92,15 +90,15 @@ namespace TMATDashboardApp
         private void tree_btnClick(object sender, EventArgs e)
         {
 
-
+            /*
             TMATSFile test = new TMATSFile("Altitude", 2, 1, 5, 2, 0, 3, 5, 4);
             TMATSFile test2 = new TMATSFile("Depth", 3, 2, 5, 0, 1, 3, 5, 6);
-            TMATSFile test3 = new TMATSFile("Speed", 5, 0, 1, 3, 2, 1, 3, 2);
+            TMATSFile test3 = new TMATSFile("Speed", 5, 0, 1, 3, 2, 1, 3, 2);*/
 
             StringBuilder output = new StringBuilder();
-            output.AppendLine(test.toString());
+            /*output.AppendLine(test.toString());
             output.AppendLine(test2.toString());
-            output.AppendLine(test3.toString());
+            output.AppendLine(test3.toString());*/
 
             //Get the current count for each paramater
             int count = 1;
@@ -118,13 +116,13 @@ namespace TMATDashboardApp
                 outputBox.Text = string.Join(separator, lines);
                 System.IO.File.WriteAllText("raw.txt", string.Empty);
 
-                String name;
-                int incrementCol;
-                int incrementRow;
-                int initialCol;
-                int initialRow;
-                int endingCol;
-                int endingRow;
+                String name = "";
+                int incrementCol = 0;
+                int incrementRow = 0;
+                int initialCol = 0;
+                int initialRow = 0;
+                int endingCol = 0;
+                int endingRow = 0;
                 for (int i = 0; i < lines.Length; i++)
                 {
                     if (lines[i].Contains($"D-{count}"))
@@ -167,11 +165,26 @@ namespace TMATDashboardApp
                         {
                             endingRow = Int32.Parse(lines[i].Substring(lines[i].IndexOf(':') + 1));
                             count++;
+                            TMATSFile input = new TMATSFile(name, incrementCol, incrementRow, initialCol, endingCol, initialRow, endingRow);
+                            output.AppendLine(input.ToString());
                         }
 
                     }
 
                 }
+                String file = $"{filename.Substring(0, filename.IndexOf("."))}.csv";
+                //Write the data into a CSV file
+                try
+                {
+                    File.WriteAllText(file, output.ToString());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Data could not be written to the CSV file. Exception: " + ex.Message);
+                    return;
+                }
+
+                MessageBox.Show("CSV created.");
             }
             else if (file_box.Text == "")
             {
@@ -186,20 +199,93 @@ namespace TMATDashboardApp
 
 
 
-            String file = $"{filename.Substring(0, filename.IndexOf("."))}.csv";
-            //Write the data into a CSV file
+
+        }
+
+        private void send_Click(object sender, EventArgs e)
+        {
+            {
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Filter = "CSV Files (*.csv)|*.csv";
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        string filePath = openFileDialog.FileName;
+                        byte[] fileBytes = File.ReadAllBytes(filePath);
+
+                        try
+                        {
+                            // Ensure the client is connected to the server before sending data
+                            if (!client.Connected)
+                            {
+                                client.Connect("127.0.0.1", 1234); // Replace with server's IP address
+                            }
+
+                            NetworkStream networkStream = client.GetStream();
+
+                            networkStream.Write(fileBytes, 0, fileBytes.Length);
+                            networkStream.Flush();
+
+                            MessageBox.Show("File sent successfully.");
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("An error occurred while sending the file: " + ex.Message);
+                        }
+                    }
+                }
+            }
+        }
+        private async void receive_Click(object sender, EventArgs e)
+        {
+            int port = 1234; // Server listening port number
+
             try
             {
-                File.WriteAllText(file, output.ToString());
+                // Ensure the client is connected to the server before receiving data
+                if (!client.Connected)
+                {
+                    await client.ConnectAsync("127.0.0.1", port); // Replace with server's IP address
+                    Console.WriteLine("Client connected to the server.");
+                }
+
+                NetworkStream networkStream = client.GetStream();
+
+                byte[] buffer = new byte[1024]; // buffer size
+                int bytesRead;
+                MemoryStream memoryStream = new MemoryStream();
+
+                while ((bytesRead = await networkStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await memoryStream.WriteAsync(buffer, 0, bytesRead);
+                }
+
+                byte[] receivedBytes = memoryStream.ToArray();
+
+                using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+                {
+                    saveFileDialog.Filter = "CSV Files (*.csv)|*.csv";
+
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        string filePath = saveFileDialog.FileName;
+                        File.WriteAllBytes(filePath, receivedBytes);
+                        MessageBox.Show("File received and saved successfully.");
+                        Console.WriteLine("File received and saved to: " + filePath);
+                    }
+                }
+
+                memoryStream.Close();
+                networkStream.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Data could not be written to the CSV file. Exception: " + ex.Message);
-                return;
+                MessageBox.Show("An error occurred while receiving the file: " + ex.Message);
+                Console.WriteLine("Error occurred while receiving the file: " + ex.Message);
             }
-
-            MessageBox.Show("CSV created.");
         }
+
 
         private void clearBtn_Click(object sender, EventArgs e)
         {

@@ -1,98 +1,86 @@
-﻿// A C# Program for Server
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Server
+public class CsvFileServer
 {
+    private const int port = 1234; // Server listening port number
+    private TcpListener listener;
+    private List<TcpClient> connectedClients = new List<TcpClient>();
 
-    class Program
+    public CsvFileServer()
     {
+        // Start the server and listen for incoming connections
+        listener = new TcpListener(IPAddress.Any, port);
+        listener.Start();
+        Console.WriteLine("Server started. Listening for incoming connections...");
+        AcceptClientsAsync();
+    }
 
-        // Main Method
-        static void Main(string[] args)
+    private async void AcceptClientsAsync()
+    {
+        try
         {
-            ExecuteServer();
-        }
-
-        public static void ExecuteServer()
-        {
-            // Establish the local endpoint
-            // for the socket. Dns.GetHostName
-            // returns the name of the host
-            // running the application.
-            IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress ipAddr = ipHost.AddressList[0];
-            IPEndPoint localEndPoint = new IPEndPoint(ipAddr, 11111);
-
-            // Creation TCP/IP Socket using
-            // Socket Class Constructor
-            Socket listener = new Socket(ipAddr.AddressFamily,
-                         SocketType.Stream, ProtocolType.Tcp);
-
-            try
+            while (true)
             {
+                TcpClient client = await listener.AcceptTcpClientAsync();
+                connectedClients.Add(client);
+                Console.WriteLine($"Client connected: {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
 
-                // Using Bind() method we associate a
-                // network address to the Server Socket
-                // All client that will connect to this
-                // Server Socket must know this network
-                // Address
-                listener.Bind(localEndPoint);
+                // Handle the new client in a separate task
+                Task.Run(() => HandleClientAsync(client));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error occurred while accepting clients: " + ex.Message);
+        }
+    }
 
-                // Using Listen() method we create
-                // the Client list that will want
-                // to connect to Server
-                listener.Listen(10);
+    private async Task HandleClientAsync(TcpClient client)
+    {
+        try
+        {
+            NetworkStream networkStream = client.GetStream();
 
-                while (true)
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while ((bytesRead = await networkStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                // Broadcast the received data to all connected clients except the sender
+                foreach (TcpClient connectedClient in connectedClients)
                 {
-
-                    Console.WriteLine("Waiting connection ... ");
-
-                    // Suspend while waiting for
-                    // incoming connection Using
-                    // Accept() method the server
-                    // will accept connection of client
-                    Socket clientSocket = listener.Accept();
-
-                    // Data buffer
-                    byte[] bytes = new Byte[1024];
-                    string data = null;
-
-                    while (true)
+                    if (connectedClient != client)
                     {
-
-                        int numByte = clientSocket.Receive(bytes);
-
-                        data += Encoding.ASCII.GetString(bytes,
-                                                   0, numByte);
-
-                        if (data.IndexOf("<EOF>") > -1)
-                            break;
+                        await connectedClient.GetStream().WriteAsync(buffer, 0, bytesRead);
                     }
-
-                    Console.WriteLine("Text received -> {0} ", data);
-                    byte[] message = Encoding.ASCII.GetBytes("Test Server");
-
-                    // Send a message to Client
-                    // using Send() method
-                    clientSocket.Send(message);
-
-                    // Close client Socket using the
-                    // Close() method. After closing,
-                    // we can use the closed Socket
-                    // for a new Client Connection
-                    clientSocket.Shutdown(SocketShutdown.Both);
-                    clientSocket.Close();
                 }
             }
 
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+            // When a client disconnects, remove it from the list of connected clients
+            connectedClients.Remove(client);
+            Console.WriteLine($"Client disconnected: {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error occurred while handling client: {((IPEndPoint)client.Client.RemoteEndPoint).Address}. {ex.Message}");
+            connectedClients.Remove(client);
+        }
+    }
+}
+
+public class Program
+{
+    static void Main()
+    {
+        // Start the server
+        CsvFileServer server = new CsvFileServer();
+
+        // Keep the server running
+        Console.ReadLine();
     }
 }
