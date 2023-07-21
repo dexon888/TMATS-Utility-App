@@ -103,7 +103,7 @@
             merge2.Name = "merge2";
             merge2.Size = new Size(288, 92);
             merge2.TabIndex = 8;
-            merge2.Text = "Merge Same TMATS File";
+            merge2.Text = "Merge Same TMAT File";
             merge2.UseVisualStyleBackColor = false;
             merge2.Click += merge2_Click;
             // 
@@ -118,7 +118,7 @@
             mergeBtn.Name = "mergeBtn";
             mergeBtn.Size = new Size(288, 74);
             mergeBtn.TabIndex = 7;
-            mergeBtn.Text = "Merge TMATS Files";
+            mergeBtn.Text = "Merge TMAT Files";
             mergeBtn.UseVisualStyleBackColor = false;
             mergeBtn.Click += mergeBtnClick;
             // 
@@ -133,7 +133,7 @@
             splitBtn.Name = "splitBtn";
             splitBtn.Size = new Size(294, 53);
             splitBtn.TabIndex = 6;
-            splitBtn.Text = "Split TMATS File";
+            splitBtn.Text = "Split TMAT File";
             splitBtn.UseVisualStyleBackColor = false;
             splitBtn.Click += splitBtnClick;
             // 
@@ -224,7 +224,7 @@
             inputButton.OnHoverTextColor = Color.Gray;
             inputButton.Size = new Size(99, 39);
             inputButton.TabIndex = 10;
-            inputButton.Text = "TMATS File Input";
+            inputButton.Text = "TMAT File Input";
             inputButton.TextColor = Color.White;
             inputButton.UseVisualStyleBackColor = true;
             inputButton.Click += inputBtn_Click;
@@ -296,7 +296,7 @@
             file_1_btn.OnHoverTextColor = Color.Gray;
             file_1_btn.Size = new Size(99, 29);
             file_1_btn.TabIndex = 15;
-            file_1_btn.Text = "File 1";
+            file_1_btn.Text = "File #1";
             file_1_btn.TextColor = Color.White;
             file_1_btn.UseVisualStyleBackColor = true;
             file_1_btn.Click += input_1Click;
@@ -315,7 +315,7 @@
             file_2_btn.OnHoverTextColor = Color.Gray;
             file_2_btn.Size = new Size(99, 27);
             file_2_btn.TabIndex = 16;
-            file_2_btn.Text = "File 2";
+            file_2_btn.Text = "File #2";
             file_2_btn.TextColor = Color.White;
             file_2_btn.UseVisualStyleBackColor = true;
             file_2_btn.Click += input_2Click;

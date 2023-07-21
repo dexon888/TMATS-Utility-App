@@ -10,7 +10,6 @@ namespace TMATDashboardApp
     public partial class Form1 : Form
     {
         private TcpClient client;
-        private TcpListener listener;
         public Form1()
         {
             client = new TcpClient();
@@ -202,66 +201,77 @@ namespace TMATDashboardApp
 
         }
 
-        private void send_Click(object sender, EventArgs e)
+        private async void send_Click(object sender, EventArgs e)
         {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                openFileDialog.Filter = "CSV Files (*.csv)|*.csv";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    openFileDialog.Filter = "CSV Files (*.csv)|*.csv";
+                    string filePath = openFileDialog.FileName;
+                    byte[] fileBytes = File.ReadAllBytes(filePath);
 
-                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    try
                     {
-                        string filePath = openFileDialog.FileName;
-                        byte[] fileBytes = File.ReadAllBytes(filePath);
-
-                        try
+                        if (!client.Connected)
                         {
-                            // Ensure the client is connected to the server before sending data
-                            if (!client.Connected)
-                            {
-                                client.Connect("127.0.0.1", 1234); // Replace with server's IP address
-                            }
-
-                            NetworkStream networkStream = client.GetStream();
-
-                            networkStream.Write(fileBytes, 0, fileBytes.Length);
-                            networkStream.Flush();
-
-                            MessageBox.Show("File sent successfully.");
+                            await client.ConnectAsync("127.0.0.1", 1234); // Replace with server's IP address
                         }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show("An error occurred while sending the file: " + ex.Message);
-                        }
+
+                        NetworkStream networkStream = client.GetStream();
+
+                        await networkStream.WriteAsync(fileBytes, 0, fileBytes.Length);
+                        await networkStream.FlushAsync();
+
+                        MessageBox.Show("File sent successfully.");
+                    }
+                    catch (SocketException ex)
+                    {
+                        MessageBox.Show("Error connecting to the server: " + ex.Message);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("An error occurred while sending the file: " + ex.Message);
                     }
                 }
             }
         }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (client != null && client.Connected)
+            {
+                client.Close();
+            }
+        }
+
         private async void receive_Click(object sender, EventArgs e)
         {
             int port = 1234; // Server listening port number
 
             try
             {
-                // Ensure the client is connected to the server before receiving data
                 if (!client.Connected)
                 {
                     await client.ConnectAsync("127.0.0.1", port); // Replace with server's IP address
-                    Console.WriteLine("Client connected to the server.");
                 }
 
                 NetworkStream networkStream = client.GetStream();
 
                 byte[] buffer = new byte[1024]; // buffer size
                 int bytesRead;
-                MemoryStream memoryStream = new MemoryStream();
+
+                StringBuilder csvData = new StringBuilder(); // To store the received CSV data
 
                 while ((bytesRead = await networkStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                 {
-                    await memoryStream.WriteAsync(buffer, 0, bytesRead);
+                    // Append the received data to the StringBuilder
+                    csvData.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
                 }
 
-                byte[] receivedBytes = memoryStream.ToArray();
+                // Convert the StringBuilder to a string (the complete CSV data)
+                string receivedCsv = csvData.ToString();
 
                 using (SaveFileDialog saveFileDialog = new SaveFileDialog())
                 {
@@ -270,22 +280,22 @@ namespace TMATDashboardApp
                     if (saveFileDialog.ShowDialog() == DialogResult.OK)
                     {
                         string filePath = saveFileDialog.FileName;
-                        File.WriteAllBytes(filePath, receivedBytes);
+                        File.WriteAllText(filePath, receivedCsv);
                         MessageBox.Show("File received and saved successfully.");
-                        Console.WriteLine("File received and saved to: " + filePath);
                     }
                 }
 
-                memoryStream.Close();
                 networkStream.Close();
+            }
+            catch (SocketException ex)
+            {
+                MessageBox.Show("Error connecting to the server: " + ex.Message);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("An error occurred while receiving the file: " + ex.Message);
-                Console.WriteLine("Error occurred while receiving the file: " + ex.Message);
             }
         }
-
 
         private void clearBtn_Click(object sender, EventArgs e)
         {

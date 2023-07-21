@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -20,7 +21,7 @@ public class CsvFileServer
         AcceptClientsAsync();
     }
 
-    private async void AcceptClientsAsync()
+    private async Task AcceptClientsAsync()
     {
         try
         {
@@ -31,7 +32,7 @@ public class CsvFileServer
                 Console.WriteLine($"Client connected: {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
 
                 // Handle the new client in a separate task
-                Task.Run(() => HandleClientAsync(client));
+                _ = HandleClientAsync(client); // Using _ to suppress the "not awaited" warning
             }
         }
         catch (Exception ex)
@@ -51,6 +52,12 @@ public class CsvFileServer
 
             while ((bytesRead = await networkStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
+                // Deserialize the received data into a CSV string
+                string receivedData = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+                // Process the received CSV data here (e.g., write to a CSV file or display it)
+                ProcessReceivedCsv(receivedData);
+
                 // Broadcast the received data to all connected clients except the sender
                 foreach (TcpClient connectedClient in connectedClients)
                 {
@@ -70,6 +77,15 @@ public class CsvFileServer
             Console.WriteLine($"Error occurred while handling client: {((IPEndPoint)client.Client.RemoteEndPoint).Address}. {ex.Message}");
             connectedClients.Remove(client);
         }
+    }
+
+
+    private void ProcessReceivedCsv(string receivedCsv)
+    {
+        // Implement your logic to handle the received CSV data here
+        // For example, you can save it to a file or display it in the console
+        Console.WriteLine("Received CSV data:");
+        Console.WriteLine(receivedCsv);
     }
 }
 
