@@ -1,102 +1,86 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-public class CsvFileServer
+public class CsvServer
 {
-    private const int port = 1234; // Server listening port number
-    private TcpListener listener;
-    private List<TcpClient> connectedClients = new List<TcpClient>();
+    private const int port = 8000;
+    private TcpListener server;
+    private List<TcpClient> clients = new List<TcpClient>();
 
-    public CsvFileServer()
+    public CsvServer()
     {
-        // Start the server and listen for incoming connections
-        listener = new TcpListener(IPAddress.Any, port);
-        listener.Start();
-        Console.WriteLine("Server started. Listening for incoming connections...");
-        AcceptClientsAsync();
+        // Start TCP listener
+        server = new TcpListener(IPAddress.Any, port);
+        server.Start();
+        Console.WriteLine("Server started on port " + port);
+
+        // Accept client connections
+        AcceptConnections();
     }
 
-    private async Task AcceptClientsAsync()
+    private async void AcceptConnections()
     {
-        try
+        while (true)
         {
-            while (true)
-            {
-                TcpClient client = await listener.AcceptTcpClientAsync();
-                connectedClients.Add(client);
-                Console.WriteLine($"Client connected: {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
+            TcpClient client = await server.AcceptTcpClientAsync();
+            clients.Add(client);
 
-                // Handle the new client in a separate task
-                _ = HandleClientAsync(client); // Using _ to suppress the "not awaited" warning
+            Console.WriteLine("Client connected: " + client.Client.RemoteEndPoint);
+
+            // Handle client in separate thread
+            await Task.Run(() => HandleClient(client));
+        }
+    }
+
+    private void HandleClient(TcpClient client)
+    {
+        NetworkStream stream = client.GetStream();
+
+        while (true)
+        {
+            // Receive CSV data from client
+            string csvData = ReceiveCsv(stream);
+
+            // Broadcast data to other clients
+            BroadcastCsv(csvData, client);
+        }
+    }
+
+    private string ReceiveCsv(NetworkStream stream)
+    {
+        byte[] buffer = new byte[1024];
+        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+
+        // Convert to string
+        string csv = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+        Console.WriteLine("Received CSV: " + csv);
+
+        return csv;
+    }
+
+    private void BroadcastCsv(string csv, TcpClient sender)
+    {
+        byte[] data = Encoding.UTF8.GetBytes(csv);
+
+        foreach (TcpClient c in clients)
+        {
+            if (c != sender)
+            {
+                NetworkStream stream = c.GetStream();
+                stream.Write(data, 0, data.Length);
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error occurred while accepting clients: " + ex.Message);
-        }
     }
 
-    private async Task HandleClientAsync(TcpClient client)
+    public static void Main()
     {
-        try
-        {
-            NetworkStream networkStream = client.GetStream();
+        CsvServer server = new CsvServer();
 
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-
-            while ((bytesRead = await networkStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-            {
-                // Deserialize the received data into a CSV string
-                string receivedData = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-                // Process the received CSV data here (e.g., write to a CSV file or display it)
-                ProcessReceivedCsv(receivedData);
-
-                // Broadcast the received data to all connected clients except the sender
-                foreach (TcpClient connectedClient in connectedClients)
-                {
-                    if (connectedClient != client)
-                    {
-                        await connectedClient.GetStream().WriteAsync(buffer, 0, bytesRead);
-                    }
-                }
-            }
-
-            // When a client disconnects, remove it from the list of connected clients
-            connectedClients.Remove(client);
-            Console.WriteLine($"Client disconnected: {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error occurred while handling client: {((IPEndPoint)client.Client.RemoteEndPoint).Address}. {ex.Message}");
-            connectedClients.Remove(client);
-        }
-    }
-
-
-    private void ProcessReceivedCsv(string receivedCsv)
-    {
-        // Implement your logic to handle the received CSV data here
-        // For example, you can save it to a file or display it in the console
-        Console.WriteLine("Received CSV data:");
-        Console.WriteLine(receivedCsv);
-    }
-}
-
-public class Program
-{
-    static void Main()
-    {
-        // Start the server
-        CsvFileServer server = new CsvFileServer();
-
-        // Keep the server running
         Console.ReadLine();
     }
 }
